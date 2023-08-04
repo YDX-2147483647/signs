@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
+import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
 from PIL import Image
@@ -55,6 +56,16 @@ def load_records(
             )
 
 
+def is_transparent(image: Image.Image) -> bool:
+    if not image.mode.endswith("A"):
+        # e.g. RGB
+        return False
+    else:
+        # e.g. RGBA
+        alpha = image.split()[-1]
+        return (np.asarray(alpha) < 255).any()  # type: ignore
+
+
 if __name__ == "__main__":
     table_filepath = next((Path.home() / "Downloads").glob("*.xlsx"))
     photos_filepath = next((Path.home() / "Downloads").glob("*.zip"))
@@ -65,12 +76,11 @@ if __name__ == "__main__":
 
     records = load_records(table_filepath, photos_filepath)
     for r in records:
-        if r.src == "photo":
-            if r.image.format == "JPEG":
-                # 删除背景
-                print(f"正在给“{r.name}”删除背景。")
-                r.image.putalpha(
-                    r.image.convert("L").point(lambda x: 255 if x < threshold else 0)
-                )
+        if r.src == "photo" and not is_transparent(r.image):
+            # 删除背景
+            print(f"正在给“{r.name}”删除背景。")
+            r.image.putalpha(
+                r.image.convert("L").point(lambda x: 255 if x < threshold else 0)
+            )
 
         r.image.save(out_dir / f"{r.name}.png")
