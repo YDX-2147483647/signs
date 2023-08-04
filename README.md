@@ -5,6 +5,7 @@
 1. 导出在线收集表
 2. `extract_images.py`
 3. `merge_into_a_column.py`
+4. `sign_document.py`
 
 所需文件请参考每段程序`if __name__ == "__main__":`后的定义。
 
