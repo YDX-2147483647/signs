@@ -9,6 +9,19 @@
 
 所需文件请参考每段程序`if __name__ == "__main__":`后的定义。
 
+```mermaid
+flowchart TB
+   在线收集表([在线收集表]) -->|"签名照片收集（收集结果）.xlsx"| extract_images
+   在线收集表
+      -->|"附件下载_签名照片收集.zip"| extract_images
+      -->|"out/*.png"| merge_into_a_column
+      -->|"out/merged.png"| sign_document
+
+    original([原始 PDF<br><small>大类分流毕业专业确认统计表</small>])
+       --> sign_document
+       --> signed([签了名的 PDF])
+```
+
 ## 导出在线收集表
 
 ### 数据及签名
