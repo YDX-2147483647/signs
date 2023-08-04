@@ -76,14 +76,21 @@ if __name__ == "__main__":
 
     records = load_records(table_filepath, photos_filepath)
     for r in records:
+        # 删除背景
         if r.src == "photo" and not is_transparent(r.image):
-            # 删除背景
-            print(f"正在给“{r.name}”删除背景。")
+            print(f"正在删除“{r.name}”的背景。")
             threshold, img = cv2.threshold(
                 np.asarray(r.image.convert("L")), 0, 255, cv2.THRESH_OTSU
             )
             r.image.putalpha(
                 r.image.convert("L").point(lambda x: 255 if x < 1.2 * threshold else 0)
             )
+
+        # 裁切
+        print(f"正在裁切“{r.name}”。")
+        alpha = r.image.split()[-1]
+        nonzero = np.asarray(alpha).nonzero()
+        (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
+        r.image = r.image.crop((left, upper, right, lower))
 
         r.image.save(out_dir / f"{r.name}.png")
