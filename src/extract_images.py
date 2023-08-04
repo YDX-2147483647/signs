@@ -11,13 +11,14 @@ from openpyxl_image_loader import SheetImageLoader
 from PIL import Image
 
 if TYPE_CHECKING:
-    from typing import Generator
+    from typing import Generator, Literal
 
 
 @dataclass
 class Record:
     name: str
     image: Image.Image
+    src: Literal["sign"] | Literal["photo"]
 
 
 def load_records(
@@ -47,16 +48,29 @@ def load_records(
                 sum(i is not None for i in (photo, sign)) == 1
             ), f"“{name}”没有正常提供照片或签名：{photo = }，{sign = }"
 
-            yield Record(name=name, image=photo or sign)  # type: ignore
+            yield Record(
+                name=name,
+                image=photo or sign,  # type: ignore
+                src="photo" if photo else "sign",
+            )
 
 
 if __name__ == "__main__":
     table_filepath = next((Path.home() / "Downloads").glob("*.xlsx"))
     photos_filepath = next((Path.home() / "Downloads").glob("*.zip"))
     out_dir = Path("out")
+    threshold = 130
 
     out_dir.mkdir(exist_ok=True)
 
     records = load_records(table_filepath, photos_filepath)
     for r in records:
+        if r.src == "photo":
+            if r.image.format == "JPEG":
+                # 删除背景
+                print(f"正在给“{r.name}”删除背景。")
+                r.image.putalpha(
+                    r.image.convert("L").point(lambda x: 255 if x < threshold else 0)
+                )
+
         r.image.save(out_dir / f"{r.name}.png")
