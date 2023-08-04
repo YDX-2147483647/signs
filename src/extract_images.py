@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
+import cv2
 import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
@@ -70,7 +71,6 @@ if __name__ == "__main__":
     table_filepath = next((Path.home() / "Downloads").glob("*.xlsx"))
     photos_filepath = next((Path.home() / "Downloads").glob("*.zip"))
     out_dir = Path("out")
-    threshold = 130
 
     out_dir.mkdir(exist_ok=True)
 
@@ -79,8 +79,11 @@ if __name__ == "__main__":
         if r.src == "photo" and not is_transparent(r.image):
             # 删除背景
             print(f"正在给“{r.name}”删除背景。")
+            threshold, img = cv2.threshold(
+                np.asarray(r.image.convert("L")), 0, 255, cv2.THRESH_OTSU
+            )
             r.image.putalpha(
-                r.image.convert("L").point(lambda x: 255 if x < threshold else 0)
+                r.image.convert("L").point(lambda x: 255 if x < 1.2 * threshold else 0)
             )
 
         r.image.save(out_dir / f"{r.name}.png")
