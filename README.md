@@ -1,6 +1,6 @@
 # Signs
 
-整理腾讯在线收集表的签名。
+整理腾讯在线收集表的签名。（适用于班级远程签字）
 
 1. 导出在线收集表
 2. `extract_images.py`
@@ -14,7 +14,7 @@ flowchart TB
    在线收集表([在线收集表]) -->|"签名照片收集（收集结果）.xlsx"| extract_images
    在线收集表
       -->|"附件下载_签名照片收集.zip"| extract_images
-      -->|"out/*.png"| merge_into_a_column
+      -->|"out/{name}.png"| merge_into_a_column
       -->|"out/merged.png"| sign_document
 
     original([原始 PDF<br><small>大类分流毕业专业确认统计表</small>])
@@ -37,3 +37,7 @@ flowchart TB
 
 1. 访问腾讯在线收集表统计页面，照片题目 → 下载此题的全部文件。
 2. “请选择下载方式”？默认下载，确定。
+
+## 设计指导思想
+
+[![xkcd 1205: Is It Worth the Time?](https://imgs.xkcd.com/comics/is_it_worth_the_time.png "Don't forget the time you spend finding the chart to look up what you save. And the time spent reading this reminder about the time spent. And the time trying to figure out if either of those actually make sense. Remember, every second counts toward your life total, including these right now.")](https://xkcd.com/1205/)
