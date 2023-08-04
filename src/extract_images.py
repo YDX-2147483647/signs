@@ -91,6 +91,6 @@ if __name__ == "__main__":
         alpha = r.image.split()[-1]
         nonzero = np.asarray(alpha).nonzero()
         (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
-        r.image = r.image.crop((left, upper, right, lower))
+        r.image = r.image.crop((left, upper, right + 1, lower + 1))
 
         r.image.save(out_dir / f"{r.name}.png")
