@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
-from PIL import Image
+from PIL import Image, ImageFilter
 
 if TYPE_CHECKING:
     from typing import Generator, Literal
@@ -89,7 +89,8 @@ if __name__ == "__main__":
         # 裁切
         print(f"正在裁切“{r.name}”。")
         alpha = r.image.split()[-1]
-        nonzero = np.asarray(alpha).nonzero()
+        # 扩散会抑制噪声，添加边距
+        nonzero = (np.asarray(alpha.filter(ImageFilter.BoxBlur(50))) > 10).nonzero()
         (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
         r.image = r.image.crop((left, upper, right + 1, lower + 1))
 
