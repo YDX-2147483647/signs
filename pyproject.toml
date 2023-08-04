@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "signs"
+version = "0.1.0"
+description = "整理腾讯在线收集表的签名。"
+authors = ["Y.D.X. <73375426+YDX-2147483647@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openpyxl = "^3.1.2"
+openpyxl-image-loader = "^1.0.5"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.25.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
