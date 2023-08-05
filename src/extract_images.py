@@ -11,6 +11,7 @@ import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
 from PIL import Image, ImageFilter
+from util import homomorphic_filter
 
 if TYPE_CHECKING:
     from typing import Generator, Literal
@@ -77,7 +78,8 @@ if __name__ == "__main__":
     records = load_records(table_filepath, photos_filepath)
     for r in records:
         # 删除背景
-        if r.src == "photo" and not is_transparent(r.image):
+        should_remove_background = r.src == "photo" and not is_transparent(r.image)
+        if should_remove_background:
             print(f"正在删除“{r.name}”的背景。")
             threshold, img = cv2.threshold(
                 np.asarray(r.image.convert("L")), 0, 255, cv2.THRESH_OTSU
@@ -93,5 +95,17 @@ if __name__ == "__main__":
         nonzero = (np.asarray(alpha.filter(ImageFilter.BoxBlur(50))) > 10).nonzero()
         (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
         r.image = r.image.crop((left, upper, right + 1, lower + 1))
+
+        # 检查
+        if should_remove_background:
+            gray = np.asarray(r.image.convert("L"))
+            if gray.std() < 30:
+                print(f"“{r.name}”的对比度太低，正在同态滤波，准备重试。")
+                gray = homomorphic_filter(gray, cutoff=60)
+                print(f"正在重新删除“{r.name}”的背景。")
+                threshold, img = cv2.threshold(
+                    gray, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV
+                )
+                r.image.putalpha(Image.fromarray(img))
 
         r.image.save(out_dir / f"{r.name}.png")
