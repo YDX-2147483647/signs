@@ -58,12 +58,12 @@ def load_records(
 
 
 def is_transparent(image: Image.Image) -> bool:
-    if not image.mode.endswith("A"):
+    if "A" not in image.getbands():
         # e.g. RGB
         return False
     else:
         # e.g. RGBA
-        alpha = image.split()[-1]
+        alpha = image.getchannel("A")
         return (np.asarray(alpha) < 255).any()  # type: ignore
 
 
