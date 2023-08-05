@@ -68,6 +68,23 @@ def is_transparent(image: Image.Image) -> bool:
         return (np.asarray(alpha) < 255).any()  # type: ignore
 
 
+def transparentize_background(image: Image.Image) -> None:
+    threshold, img = cv2.threshold(
+        np.asarray(image.convert("L")), 0, 255, cv2.THRESH_OTSU
+    )
+    image.putalpha(
+        image.convert("L").point(lambda x: 255 if x < 1.2 * threshold else 0)
+    )
+
+
+def auto_crop(image: Image.Image) -> Image.Image:
+    alpha = image.split()[-1]
+    # 扩散会抑制噪声，添加边距
+    nonzero = (np.asarray(alpha.filter(ImageFilter.BoxBlur(50))) > 10).nonzero()
+    (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
+    return image.crop((left, upper, right + 1, lower + 1))
+
+
 if __name__ == "__main__":
     table_filepath = next((Path.home() / "Downloads").glob("*.xlsx"))
     photos_filepath = next((Path.home() / "Downloads").glob("*.zip"))
@@ -81,20 +98,11 @@ if __name__ == "__main__":
         should_remove_background = r.src == "photo" and not is_transparent(r.image)
         if should_remove_background:
             print(f"正在删除“{r.name}”的背景。")
-            threshold, img = cv2.threshold(
-                np.asarray(r.image.convert("L")), 0, 255, cv2.THRESH_OTSU
-            )
-            r.image.putalpha(
-                r.image.convert("L").point(lambda x: 255 if x < 1.2 * threshold else 0)
-            )
+            transparentize_background(r.image)
 
         # 裁切
         print(f"正在裁切“{r.name}”。")
-        alpha = r.image.split()[-1]
-        # 扩散会抑制噪声，添加边距
-        nonzero = (np.asarray(alpha.filter(ImageFilter.BoxBlur(50))) > 10).nonzero()
-        (upper, lower), (left, right) = [(min(x), max(x)) for x in nonzero]
-        r.image = r.image.crop((left, upper, right + 1, lower + 1))
+        r.image = auto_crop(r.image)
 
         # 检查
         if should_remove_background:
