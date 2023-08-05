@@ -10,8 +10,7 @@ import cv2
 import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
-from PIL import Image, ImageFilter
-from util import homomorphic_filter
+from PIL import Image, ImageFilter, ImageOps
 
 if TYPE_CHECKING:
     from typing import Generator, Literal
@@ -106,14 +105,28 @@ if __name__ == "__main__":
 
         # 检查
         if should_remove_background:
-            gray = np.asarray(r.image.convert("L"))
-            if gray.std() < 30:
-                print(f"“{r.name}”的对比度太低，正在同态滤波，准备重试。")
-                gray = homomorphic_filter(gray, cutoff=60)
-                print(f"正在重新删除“{r.name}”的背景。")
-                threshold, img = cv2.threshold(
-                    gray, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV
+            gray = r.image.convert("L")
+            if np.asarray(gray).std() < 30:
+                print(f"“{r.name}”的对比度太低，正在用边缘方法重试。")
+                edges = (
+                    gray.filter(ImageFilter.FIND_EDGES)
+                    .point(lambda x: 255 if x > 10 else 0)
+                    .filter(ImageFilter.BoxBlur(10))
+                    .point(lambda x: 255 if x > 30 else 0)
                 )
-                r.image.putalpha(Image.fromarray(img))
+                closing = cv2.morphologyEx(
+                    np.asarray(edges),
+                    cv2.MORPH_OPEN,
+                    cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20)),
+                )
+                dilated = cv2.dilate(
+                    closing, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40, 40))
+                )
+                r.image.putalpha(Image.fromarray(dilated))
+                if False:
+                    # todo
+                    r.image = ImageOps.equalize(gray, mask=Image.fromarray(dilated))
+                    transparentize_background(r.image)
+                r.image = auto_crop(r.image)
 
         r.image.save(out_dir / f"{r.name}.png")
