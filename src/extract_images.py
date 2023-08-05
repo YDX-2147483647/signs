@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from openpyxl import load_workbook
 from openpyxl_image_loader import SheetImageLoader
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter
 
 if TYPE_CHECKING:
     from typing import Generator, Literal
@@ -107,26 +107,6 @@ if __name__ == "__main__":
         if should_remove_background:
             gray = r.image.convert("L")
             if np.asarray(gray).std() < 30:
-                print(f"“{r.name}”的对比度太低，正在用边缘方法重试。")
-                edges = (
-                    gray.filter(ImageFilter.FIND_EDGES)
-                    .point(lambda x: 255 if x > 10 else 0)
-                    .filter(ImageFilter.BoxBlur(10))
-                    .point(lambda x: 255 if x > 30 else 0)
-                )
-                closing = cv2.morphologyEx(
-                    np.asarray(edges),
-                    cv2.MORPH_OPEN,
-                    cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20)),
-                )
-                dilated = cv2.dilate(
-                    closing, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40, 40))
-                )
-                r.image.putalpha(Image.fromarray(dilated))
-                if False:
-                    # todo
-                    r.image = ImageOps.equalize(gray, mask=Image.fromarray(dilated))
-                    transparentize_background(r.image)
-                r.image = auto_crop(r.image)
+                print(f"“{r.name}”的对比度较低，建议手动处理。")
 
         r.image.save(out_dir / f"{r.name}.png")
