@@ -17,6 +17,8 @@ flowchart TB
       -->|"out/{name}.png"| merge_into_a_column
       -->|"out/merged.png"| sign_document
 
+    names([名单<br>names.txt]) --> merge_into_a_column
+
     original([原始 PDF<br><small>大类分流毕业专业确认统计表</small>])
        --> sign_document
        --> signed([签了名的 PDF])
